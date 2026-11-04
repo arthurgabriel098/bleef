@@ -1,122 +1,163 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BLEFE! - Party Game</title>
+<title>IMPOSTOR FC</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#17152b;color:white;font-family:Nunito,sans-serif;min-height:100vh;padding:18px}
-button,input{font:inherit}button{cursor:pointer;border:0}
+:root{--bg:#080b0a;--card:#111916;--green:#b6ff35;--white:#f5f7f2;--muted:#9aa69d}
+body{margin:0;background:var(--bg);color:var(--white);font-family:Nunito,sans-serif;min-height:100vh;padding:18px}
+button,input{font:inherit}
+button{cursor:pointer;border:0}
 .app{max-width:850px;margin:auto}
-header{display:flex;justify-content:space-between;align-items:center;padding:15px 0}
-.logo{font-size:27px;font-weight:1000}.logo span,h1 span{color:#ffd166}
-.tag{font-size:10px;color:#b8b3d0;letter-spacing:2px}
-.screen{display:none;text-align:center;padding:28px 10px}.screen.active{display:block}
-h1{font-size:clamp(38px,8vw,65px);line-height:1;margin:20px 0}
-p{color:#b8b3d0;line-height:1.6}
+header{display:flex;justify-content:space-between;align-items:center;padding:15px 0;border-bottom:1px solid #26332b}
+.logo{font-size:27px;font-weight:1000;letter-spacing:-1px}
+.logo span,h1 span{color:var(--green)}
+.tag{font-size:10px;color:var(--muted);letter-spacing:2px;font-weight:900}
+.screen{display:none;text-align:center;padding:28px 10px}
+.screen.active{display:block}
+h1{font-size:clamp(38px,8vw,65px);line-height:1;margin:25px 0;font-weight:1000}
+p{color:var(--muted);line-height:1.6}
 .characters{font-size:70px;margin:22px}
-.btn{padding:14px 22px;border-radius:14px;font-weight:900;margin:7px}
-.primary{background:#ffd166;color:#28213b;box-shadow:0 5px #c69b40}
-.secondary{background:#34304f;color:white}
-.card{background:#24213e;border:1px solid #ffffff18;padding:20px;border-radius:20px;margin:14px auto;max-width:560px}
-input{background:#17152b;color:white;border:2px solid #514b70;padding:13px;border-radius:12px;width:100%;margin:8px 0;text-align:center}
-.code{font-size:40px;color:#ffd166;letter-spacing:8px;font-weight:1000}
+.btn{padding:15px 22px;border-radius:12px;font-weight:1000;margin:7px;transition:.2s}
+.btn:hover{transform:translateY(-2px)}
+.primary{background:var(--green);color:#10150c;box-shadow:0 5px #6b9b19}
+.secondary{background:#202b24;color:white;border:1px solid #35473a}
+.card{background:var(--card);border:1px solid #293a2e;padding:20px;border-radius:18px;margin:14px auto;max-width:560px}
+input{background:#090f0b;color:white;border:1px solid #405344;padding:14px;border-radius:10px;width:100%;margin:8px 0;text-align:center;outline:none}
+input:focus{border-color:var(--green)}
+.code{font-size:40px;color:var(--green);letter-spacing:8px;font-weight:1000}
 .players{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.player,.tip{background:#34304f;padding:12px;border-radius:12px;margin:7px}
-.badge{color:#ffd166;font-weight:900;letter-spacing:2px}
-#message,#gameMessage{min-height:25px;color:#86e3b0}
-.word{font-size:36px;color:#ffd166;font-weight:1000}
-.choice{display:block;width:100%;background:#34304f;color:white;padding:13px;border-radius:12px;margin:8px 0}
+.player,.tip{background:#202b24;padding:13px;border-radius:10px;margin:7px;border:1px solid #35473a}
+.badge{color:var(--green);font-weight:1000;letter-spacing:2px}
+#message,#gameMessage{min-height:25px;color:var(--green)}
+.word{font-size:36px;color:var(--green);font-weight:1000}
+.choice{display:block;width:100%;background:#202b24;color:white;padding:14px;border-radius:10px;margin:8px 0;border:1px solid #35473a}
+.choice:hover{border-color:var(--green)}
 .choice:disabled{opacity:.5}
-footer{text-align:center;color:#77728f;font-size:12px;padding:25px}
+footer{text-align:center;color:#66736a;font-size:12px;padding:25px}
 [hidden]{display:none!important}
-@media(max-width:500px){body{padding:10px}.players{grid-template-columns:1fr}.characters{font-size:52px}}
+@media(max-width:500px){
+ body{padding:10px}
+ .players{grid-template-columns:1fr}
+ .characters{font-size:52px}
+ .btn{width:100%;margin:7px 0}
+}
 </style>
 </head>
+
 <body>
 <div class="app">
+
 <header>
- <div class="logo">🤥 BLEFE<span>!</span></div>
- <div class="tag">PARTY GAME ONLINE</div>
+ <div class="logo">⚽ IMPOSTOR<span> FC</span></div>
+ <div class="tag">FOOTBALL PARTY GAME</div>
 </header>
 
 <section id="home" class="screen active">
- <div class="badge">🕵️ CONFIE EM NINGUÉM</div>
- <h1>Todo mundo tem<br>algo a <span>esconder.</span></h1>
- <div class="characters">🤫 🦊 😎</div>
- <p>Descubra quem está mentindo.<br>Mas cuidado: pode ser seu melhor amigo!</p>
+ <div class="badge">⚽ O JOGO DA DESCONFIANÇA</div>
+
+ <h1>Quem entende<br>de <span>futebol?</span></h1>
+
+ <div class="characters">⚽ 🏆 👀</div>
+
+ <p>
+ Todos conhecem um jogador.<br>
+ Menos o impostor. Descubra quem está blefando!
+ </p>
+
  <button class="btn primary" onclick="createRoom()">CRIAR SALA →</button>
  <button class="btn secondary" onclick="showJoin()">ENTRAR COM CÓDIGO</button>
+
  <div id="joinArea" class="card" hidden>
   <input id="nameJoin" maxlength="16" placeholder="SEU NOME">
   <input id="codeInput" maxlength="6" placeholder="CÓDIGO DA SALA">
-  <button class="btn primary" onclick="joinRoom()">ENTRAR</button>
+  <button class="btn primary" onclick="joinRoom()">ENTRAR NA PARTIDA</button>
  </div>
+
  <div class="card">
-  <h3>🎮 COMO JOGAR?</h3>
-  <p>Receba uma palavra secreta. O impostor recebe apenas uma pista. Todos dão dicas e depois votam em quem está mentindo!</p>
+  <h3>🏟️ COMO JOGAR?</h3>
+  <p>
+   A maioria recebe o nome de um jogador de futebol.
+   O impostor recebe apenas uma pista indireta.
+   Todos dão dicas e depois votam para descobrir quem é o impostor.
+  </p>
  </div>
+
  <p id="message"></p>
 </section>
 
 <section id="lobby" class="screen">
- <div class="badge">🎉 SALA PRIVADA ONLINE</div>
- <h1>Chame sua <span>equipe!</span></h1>
+ <div class="badge">🏟️ VESTIÁRIO</div>
+ <h1>Monte sua <span>equipe!</span></h1>
+
  <div class="card">
-  <p>CÓDIGO DA SALA</p>
+  <p>CÓDIGO DA PARTIDA</p>
   <div class="code" id="roomCode">------</div>
   <button class="btn secondary" onclick="copyCode()">COPIAR CÓDIGO</button>
  </div>
+
  <div class="card">
-  <h3>👥 JOGADORES ONLINE</h3>
+  <h3>👥 JOGADORES NA SALA</h3>
   <div id="playerList" class="players"></div>
   <p id="playerCount"></p>
  </div>
+
  <p id="lobbyMessage"></p>
- <button id="startBtn" class="btn primary" onclick="startGame()">COMEÇAR PARTIDA →</button>
+
+ <button id="startBtn" class="btn primary" onclick="startGame()">INICIAR PARTIDA →</button>
  <button class="btn secondary" onclick="leaveRoom()">SAIR DA SALA</button>
 </section>
 
 <section id="game" class="screen">
  <div class="badge" id="phaseBadge">RODADA</div>
  <h1 id="gameTitle">Sua missão</h1>
+
  <div class="card">
-  <p>SUA INFORMAÇÃO SECRETA</p>
+  <p>🔒 SUA INFORMAÇÃO SECRETA</p>
   <div class="word" id="secretWord">...</div>
   <p id="secretHint"></p>
-  <p class="small">Não mostre esta tela aos outros jogadores!</p>
+  <p>Não mostre esta tela aos outros jogadores!</p>
  </div>
+
  <div class="card" id="tipCard">
-  <h3>💬 DICAS</h3>
+  <h3>💬 RODADA DE DICAS</h3>
   <div id="tipsList"></div>
   <div id="tipForm">
-   <input id="tipInput" maxlength="100" placeholder="Escreva sua dica...">
+   <input id="tipInput" maxlength="100" placeholder="Digite sua dica...">
    <button class="btn primary" onclick="sendTip()">ENVIAR DICA</button>
   </div>
  </div>
+
  <div class="card" id="voteCard" hidden>
   <h3>🗳️ QUEM É O IMPOSTOR?</h3>
   <div id="voteChoices"></div>
   <p id="voteStatus"></p>
  </div>
+
  <div class="card" id="resultCard" hidden>
-  <h3>🏆 RESULTADO</h3>
+  <h3>🏆 RESULTADO DA PARTIDA</h3>
   <div class="word" id="resultText"></div>
   <p id="resultDetails"></p>
-  <button class="btn primary" id="againBtn" onclick="startGame()">JOGAR OUTRA RODADA</button>
+  <button class="btn primary" id="againBtn" onclick="startGame()">PRÓXIMA RODADA</button>
  </div>
+
  <p id="gameMessage"></p>
  <button class="btn secondary" onclick="leaveRoom()">SAIR DA SALA</button>
 </section>
-<footer>BLEFE! · Feito para jogar com amigos.</footer>
+
+<footer>IMPOSTOR FC · FOOTBALL PARTY GAME</footer>
 </div>
 
 <script>
 const SUPABASE_URL="https://crljbnnbseehdlqzrwan.supabase.co";
 const SUPABASE_KEY="sb_publishable_8H4O_lp1eqLe8S3a2qTzag_HjpxWv3s";
+
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 let currentUser=null,currentRoom=null,currentPlayer=null;
@@ -129,18 +170,28 @@ function show(id){
  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
  $(id).classList.add("active");
 }
+
 function say(t){$("message").textContent=t}
+
 function escapeHTML(v){
  return String(v).replace(/[&<>"']/g,c=>({
- "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
  }[c]));
 }
-function makeCode(){return Math.random().toString(36).slice(2,8).toUpperCase()}
+
+function makeCode(){
+ return Math.random().toString(36).slice(2,8).toUpperCase();
+}
 
 async function authenticate(){
  const {data,error}=await db.auth.getSession();
  if(error)throw error;
- if(data.session){currentUser=data.session.user;return}
+
+ if(data.session){
+  currentUser=data.session.user;
+  return;
+ }
+
  const login=await db.auth.signInAnonymously();
  if(login.error)throw login.error;
  currentUser=login.data.user;
@@ -150,41 +201,66 @@ async function createRoom(){
  try{
   const name=prompt("Qual seu nome?");
   if(!name?.trim())return;
-  say("Criando sala...");
+
+  say("Preparando o vestiário...");
   await authenticate();
+
   const r=await db.from("rooms").insert({
-   code:makeCode(),owner_id:currentUser.id
+   code:makeCode(),
+   owner_id:currentUser.id
   }).select().single();
+
   if(r.error)throw r.error;
+
   currentRoom=r.data;
   await addPlayer(name.trim());
   await enterLobby();
- }catch(e){say("Erro: "+e.message);console.error(e)}
+
+ }catch(e){
+  say("Erro: "+e.message);
+  console.error(e);
+ }
 }
 
-function showJoin(){$("joinArea").hidden=false}
+function showJoin(){
+ $("joinArea").hidden=false;
+}
 
 async function joinRoom(){
  try{
   const name=$("nameJoin").value.trim();
   const code=$("codeInput").value.trim().toUpperCase();
+
   if(!name||!code)throw Error("Digite seu nome e o código.");
-  say("Procurando sala...");
+
+  say("Procurando partida...");
   await authenticate();
+
   const r=await db.from("rooms").select("*").eq("code",code).maybeSingle();
+
   if(r.error)throw r.error;
   if(!r.data)throw Error("Sala não encontrada.");
-  if(r.data.status&&r.data.status!=="waiting")throw Error("A partida já começou.");
+  if(r.data.status&&r.data.status!=="waiting")
+   throw Error("A partida já começou.");
+
   currentRoom=r.data;
   await addPlayer(name);
   await enterLobby();
- }catch(e){say("Erro: "+e.message);console.error(e)}
+
+ }catch(e){
+  say("Erro: "+e.message);
+  console.error(e);
+ }
 }
 
 async function addPlayer(name){
  const r=await db.from("players").insert({
-  room_id:currentRoom.id,user_id:currentUser.id,name,avatar:"🤫"
+  room_id:currentRoom.id,
+  user_id:currentUser.id,
+  name,
+  avatar:"⚽"
  }).select().single();
+
  if(r.error)throw r.error;
  currentPlayer=r.data;
 }
@@ -192,14 +268,28 @@ async function addPlayer(name){
 async function enterLobby(){
  $("roomCode").textContent=currentRoom.code;
  show("lobby");
+
  await refreshPlayers();
+
  if(channel)await db.removeChannel(channel);
 
- channel=db.channel("blefe-"+currentRoom.id)
- .on("postgres_changes",{event:"*",schema:"public",table:"players",filter:"room_id=eq."+currentRoom.id},refreshPlayers)
- .on("postgres_changes",{event:"*",schema:"public",table:"blefe_rounds",filter:"room_id=eq."+currentRoom.id},loadRound)
- .on("postgres_changes",{event:"*",schema:"public",table:"blefe_tips",filter:"round_id=eq."+(currentRound?.id||"00000000-0000-0000-0000-000000000000")},loadTips)
- .on("postgres_changes",{event:"*",schema:"public",table:"blefe_votes",filter:"round_id=eq."+ (currentRound?.id||"00000000-0000-0000-0000-000000000000")},loadVotes)
+ channel=db.channel("impostor-"+currentRoom.id)
+ .on("postgres_changes",{
+  event:"*",schema:"public",table:"players",
+  filter:"room_id=eq."+currentRoom.id
+ },refreshPlayers)
+ .on("postgres_changes",{
+  event:"*",schema:"public",table:"blefe_rounds",
+  filter:"room_id=eq."+currentRoom.id
+ },loadRound)
+ .on("postgres_changes",{
+  event:"*",schema:"public",table:"blefe_tips",
+  filter:"round_id=eq."+(currentRound?.id||"00000000-0000-0000-0000-000000000000")
+ },loadTips)
+ .on("postgres_changes",{
+  event:"*",schema:"public",table:"blefe_votes",
+  filter:"round_id=eq."+(currentRound?.id||"00000000-0000-0000-0000-000000000000")
+ },loadVotes)
  .subscribe();
 
  await loadRound();
@@ -207,79 +297,172 @@ async function enterLobby(){
 
 async function refreshPlayers(){
  if(!currentRoom)return;
- const r=await db.from("players").select("id,name,avatar,user_id")
- .eq("room_id",currentRoom.id).order("joined_at");
- if(r.error){console.error(r.error);return}
+
+ const r=await db.from("players")
+ .select("id,name,avatar,user_id")
+ .eq("room_id",currentRoom.id)
+ .order("joined_at");
+
+ if(r.error){
+  console.error(r.error);
+  return;
+ }
+
  players=r.data||[];
+
  $("playerList").innerHTML=players.map(p=>
- `<div class="player">${escapeHTML(p.avatar||"🤫")} ${escapeHTML(p.name)}${p.user_id===currentRoom.owner_id?" 👑":""}</div>`
+  `<div class="player">
+   ${escapeHTML(p.avatar||"⚽")}
+   ${escapeHTML(p.name)}
+   ${p.user_id===currentRoom.owner_id?" 👑":""}
+  </div>`
  ).join("");
- $("playerCount").textContent=players.length+" jogador(es) na sala";
+
+ $("playerCount").textContent=players.length+" jogador(es) na partida";
+
  const owner=currentUser.id===currentRoom.owner_id;
- $("lobbyMessage").textContent=owner?"Você é o anfitrião! Inicie com pelo menos 3 jogadores.":"Aguardando o anfitrião iniciar.";
+
+ $("lobbyMessage").textContent=owner
+  ?"Você é o capitão! Inicie com pelo menos 3 jogadores."
+  :"Aguardando o capitão iniciar.";
+
  $("startBtn").disabled=!owner||players.length<3;
  $("startBtn").style.opacity=$("startBtn").disabled?".45":"1";
 }
 
 async function copyCode(){
- try{await navigator.clipboard.writeText(currentRoom.code);alert("Código copiado!")}
- catch{alert("Código: "+currentRoom.code)}
+ try{
+  await navigator.clipboard.writeText(currentRoom.code);
+  alert("Código copiado!");
+ }catch{
+  alert("Código: "+currentRoom.code);
+ }
 }
 
 async function startGame(){
  try{
-  if(currentUser.id!==currentRoom.owner_id)throw Error("Somente o anfitrião pode iniciar.");
+  if(currentUser.id!==currentRoom.owner_id)
+   throw Error("Somente o capitão pode iniciar.");
+
   await refreshPlayers();
-  if(players.length<3)throw Error("São necessários pelo menos 3 jogadores.");
-  $("lobbyMessage").textContent="Sorteando os papéis...";
-  const r=await db.rpc("start_blefe_round",{p_room_id:currentRoom.id});
+
+  if(players.length<3)
+   throw Error("São necessários pelo menos 3 jogadores.");
+
+  $("lobbyMessage").textContent="Sorteando os jogadores...";
+
+  const r=await db.rpc("start_blefe_round",{
+   p_room_id:currentRoom.id
+  });
+
   if(r.error)throw r.error;
+
   await loadRound();
- }catch(e){$("lobbyMessage").textContent="Erro: "+e.message;console.error(e)}
+
+ }catch(e){
+  $("lobbyMessage").textContent="Erro: "+e.message;
+  console.error(e);
+ }
 }
 
 async function loadRound(){
  if(!currentRoom)return;
- const r=await db.from("blefe_rounds").select("*")
- .eq("room_id",currentRoom.id).order("created_at",{ascending:false}).limit(1).maybeSingle();
- if(r.error){console.error(r.error);return}
+
+ const r=await db.from("blefe_rounds")
+ .select("*")
+ .eq("room_id",currentRoom.id)
+ .order("created_at",{ascending:false})
+ .limit(1)
+ .maybeSingle();
+
+ if(r.error){
+  console.error(r.error);
+  return;
+ }
+
  if(!r.data)return;
- if(currentRound?.id===r.data.id && currentRound.phase===r.data.phase)return;
+
+ if(currentRound?.id===r.data.id&&currentRound.phase===r.data.phase)
+  return;
+
  currentRound=r.data;
- const s=await db.from("blefe_secrets").select("role,secret_word,hint")
- .eq("round_id",currentRound.id).eq("player_id",currentPlayer.id).maybeSingle();
- if(s.error){$("gameMessage").textContent="Erro ao carregar seu papel: "+s.error.message;return}
+
+ const s=await db.from("blefe_secrets")
+ .select("role,secret_word,hint")
+ .eq("round_id",currentRound.id)
+ .eq("player_id",currentPlayer.id)
+ .maybeSingle();
+
+ if(s.error){
+  $("gameMessage").textContent="Erro ao carregar seu papel: "+s.error.message;
+  return;
+ }
+
  mySecret=s.data;
+
  show("game");
- $("phaseBadge").textContent="🎲 RODADA "+currentRound.round_number;
- $("gameTitle").textContent=mySecret?.role==="impostor"?"Você é o impostor!":"Descubra quem está blefando";
+
+ $("phaseBadge").textContent="⚽ RODADA "+currentRound.round_number;
+
+ $("gameTitle").textContent=
+  mySecret?.role==="impostor"
+  ?"VOCÊ É O IMPOSTOR!"
+  :"DESCUBRA QUEM ESTÁ BLEFANDO";
+
  $("secretWord").textContent=mySecret?.secret_word||"Carregando...";
- $("secretHint").textContent=mySecret?.role==="impostor"?"Sua pista: "+(mySecret.hint||"Observe os outros."):"Você recebeu a palavra secreta.";
+
+ $("secretHint").textContent=
+  mySecret?.role==="impostor"
+  ?"Sua pista: "+(mySecret.hint||"Observe os outros jogadores.")
+  :"Você recebeu o jogador secreto.";
+
  $("resultCard").hidden=currentRound.phase!=="result";
  $("voteCard").hidden=currentRound.phase==="tips"||currentRound.phase==="result";
  $("tipCard").hidden=currentRound.phase!=="tips";
  $("tipForm").hidden=false;
+
  await loadTips();
  await loadVotes();
+
  if(currentRound.phase==="result")renderResult();
 }
 
 async function loadTips(){
  if(!currentRound)return;
- const r=await db.from("blefe_tips").select("player_id,message,created_at")
- .eq("round_id",currentRound.id).order("created_at");
- if(r.error){console.error(r.error);return}
+
+ const r=await db.from("blefe_tips")
+ .select("player_id,message,created_at")
+ .eq("round_id",currentRound.id)
+ .order("created_at");
+
+ if(r.error){
+  console.error(r.error);
+  return;
+ }
+
  tips=r.data||[];
+
  $("tipsList").innerHTML=tips.map(t=>{
   const p=players.find(x=>x.id===t.player_id);
-  return `<div class="tip"><b>${escapeHTML(p?.name||"Jogador")}:</b> ${escapeHTML(t.message)}</div>`;
+
+  return `<div class="tip">
+   <b>${escapeHTML(p?.name||"Jogador")}:</b>
+   ${escapeHTML(t.message)}
+  </div>`;
  }).join("")||"<p>Aguardando as dicas...</p>";
+
  const already=tips.some(t=>t.player_id===currentPlayer.id);
+
  $("tipForm").hidden=already||currentRound.phase!=="tips";
+
  if(tips.length===players.length&&currentRound.phase==="tips"){
-  $("gameMessage").textContent="Todas as dicas foram enviadas. A votação será liberada em breve.";
+  $("gameMessage").textContent="Todas as dicas foram enviadas!";
+
   if(currentUser.id===currentRoom.owner_id){
-   const u=await db.from("blefe_rounds").update({phase:"voting"}).eq("id",currentRound.id);
+   const u=await db.from("blefe_rounds")
+   .update({phase:"voting"})
+   .eq("id",currentRound.id);
+
    if(u.error)console.warn(u.error.message);
   }
  }
@@ -288,30 +471,56 @@ async function loadTips(){
 async function sendTip(){
  const message=$("tipInput").value.trim();
  if(!message)return;
+
  try{
   const r=await db.from("blefe_tips").insert({
-   round_id:currentRound.id,player_id:currentPlayer.id,message
+   round_id:currentRound.id,
+   player_id:currentPlayer.id,
+   message
   });
+
   if(r.error)throw r.error;
+
   $("tipInput").value="";
   await loadTips();
- }catch(e){$("gameMessage").textContent="Erro: "+e.message}
+
+ }catch(e){
+  $("gameMessage").textContent="Erro: "+e.message;
+ }
 }
 
 async function loadVotes(){
  if(!currentRound)return;
- const r=await db.from("blefe_votes").select("*").eq("round_id",currentRound.id);
- if(r.error){console.error(r.error);return}
+
+ const r=await db.from("blefe_votes")
+ .select("*")
+ .eq("round_id",currentRound.id);
+
+ if(r.error){
+  console.error(r.error);
+  return;
+ }
+
  votes=r.data||[];
+
  if(currentRound.phase==="voting"){
   $("voteCard").hidden=false;
-  $("tipCard").hidden=false;
+
   $("voteChoices").innerHTML=players.map(p=>
-   `<button class="choice" ${votes.some(v=>v.voter_id===currentPlayer.id)?"disabled":""} onclick="castVote('${p.id}')">${escapeHTML(p.name)}</button>`
+   `<button class="choice"
+    ${votes.some(v=>v.voter_id===currentPlayer.id)?"disabled":""}
+    onclick="castVote('${p.id}')">
+    ⚽ ${escapeHTML(p.name)}
+   </button>`
   ).join("");
-  $("voteStatus").textContent=votes.length+" de "+players.length+" votos registrados.";
+
+  $("voteStatus").textContent=
+   votes.length+" de "+players.length+" votos registrados.";
  }
- if(votes.length===players.length&&currentUser.id===currentRoom.owner_id&&currentRound.phase==="voting"){
+
+ if(votes.length===players.length&&
+    currentUser.id===currentRoom.owner_id&&
+    currentRound.phase==="voting"){
   await finishRound();
  }
 }
@@ -319,41 +528,78 @@ async function loadVotes(){
 async function castVote(target){
  try{
   const r=await db.from("blefe_votes").insert({
-   round_id:currentRound.id,voter_id:currentPlayer.id,target_id:target
+   round_id:currentRound.id,
+   voter_id:currentPlayer.id,
+   target_id:target
   });
+
   if(r.error)throw r.error;
   await loadVotes();
- }catch(e){$("voteStatus").textContent=e.message}
+
+ }catch(e){
+  $("voteStatus").textContent=e.message;
+ }
 }
 
 async function finishRound(){
  if(roundBusy)return;
  roundBusy=true;
+
  try{
-  const r=await db.rpc("finish_blefe_round",{p_round_id:currentRound.id});
+  const r=await db.rpc("finish_blefe_round",{
+   p_round_id:currentRound.id
+  });
+
   if(r.error)throw r.error;
+
   await loadRound();
- }catch(e){$("gameMessage").textContent="Erro no resultado: "+e.message}
- finally{roundBusy=false}
+
+ }catch(e){
+  $("gameMessage").textContent="Erro no resultado: "+e.message;
+ }finally{
+  roundBusy=false;
+ }
 }
 
 function renderResult(){
  $("resultCard").hidden=false;
  $("voteCard").hidden=true;
  $("tipCard").hidden=true;
- $("resultText").textContent=currentRound.caught?"IMPOSTOR DESCOBERTO! 🎉":"O IMPOSTOR ESCAPOU! 😈";
+
+ $("resultText").textContent=currentRound.caught
+  ?"IMPOSTOR DESCOBERTO! 🎉"
+  :"O IMPOSTOR ESCAPOU! 😈";
+
  const imp=players.find(p=>p.id===currentRound.impostor_id);
- $("resultDetails").textContent="O impostor era "+(imp?.name||"desconhecido")+". A palavra era: "+currentRound.result_word;
+
+ $("resultDetails").textContent=
+  "O impostor era "+(imp?.name||"desconhecido")+
+  ". O jogador secreto era: "+currentRound.result_word;
+
  $("againBtn").hidden=currentUser.id!==currentRoom.owner_id;
 }
 
 async function leaveRoom(){
- if(channel){await db.removeChannel(channel);channel=null}
- if(currentPlayer){
-  await db.from("players").delete().eq("id",currentPlayer.id);
+ if(channel){
+  await db.removeChannel(channel);
+  channel=null;
  }
- currentRoom=null;currentPlayer=null;currentRound=null;mySecret=null;
- tips=[];votes=[];show("home");say("Você saiu da sala.");
+
+ if(currentPlayer){
+  await db.from("players")
+  .delete()
+  .eq("id",currentPlayer.id);
+ }
+
+ currentRoom=null;
+ currentPlayer=null;
+ currentRound=null;
+ mySecret=null;
+ tips=[];
+ votes=[];
+
+ show("home");
+ say("Você saiu da partida.");
 }
 </script>
 </body>
