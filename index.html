@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -9,36 +8,32 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#17152b;color:white;font-family:Nunito,sans-serif;min-height:100vh;padding:20px}
-button,input{font:inherit}
-button{cursor:pointer;border:0}
+body{margin:0;background:#17152b;color:white;font-family:Nunito,sans-serif;min-height:100vh;padding:18px}
+button,input{font:inherit}button{cursor:pointer;border:0}
 .app{max-width:850px;margin:auto}
 header{display:flex;justify-content:space-between;align-items:center;padding:15px 0}
-.logo{font-size:27px;font-weight:1000}
-.logo span{color:#ffd166}
+.logo{font-size:27px;font-weight:1000}.logo span,h1 span{color:#ffd166}
 .tag{font-size:10px;color:#b8b3d0;letter-spacing:2px}
-.screen{display:none;text-align:center;padding:35px 10px}
-.screen.active{display:block}
-h1{font-size:clamp(45px,9vw,75px);line-height:1;margin:20px 0}
-h1 span{color:#ffd166}
+.screen{display:none;text-align:center;padding:28px 10px}.screen.active{display:block}
+h1{font-size:clamp(38px,8vw,65px);line-height:1;margin:20px 0}
 p{color:#b8b3d0;line-height:1.6}
-.characters{font-size:75px;margin:25px}
-.btn{padding:15px 24px;border-radius:14px;font-weight:900;margin:7px;transition:.2s}
-.btn:hover{transform:translateY(-3px)}
+.characters{font-size:70px;margin:22px}
+.btn{padding:14px 22px;border-radius:14px;font-weight:900;margin:7px}
 .primary{background:#ffd166;color:#28213b;box-shadow:0 5px #c69b40}
 .secondary{background:#34304f;color:white}
-.card{background:#24213e;border:1px solid #ffffff18;padding:22px;border-radius:20px;margin:15px auto;max-width:520px}
-input{background:#17152b;color:white;border:2px solid #514b70;padding:13px;border-radius:12px;width:100%;margin:8px 0;text-align:center;outline:none}
-input:focus{border-color:#ffd166}
-.code{font-size:42px;color:#ffd166;letter-spacing:8px;font-weight:1000}
+.card{background:#24213e;border:1px solid #ffffff18;padding:20px;border-radius:20px;margin:14px auto;max-width:560px}
+input{background:#17152b;color:white;border:2px solid #514b70;padding:13px;border-radius:12px;width:100%;margin:8px 0;text-align:center}
+.code{font-size:40px;color:#ffd166;letter-spacing:8px;font-weight:1000}
 .players{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.player{background:#34304f;padding:12px;border-radius:12px;font-weight:900}
+.player,.tip{background:#34304f;padding:12px;border-radius:12px;margin:7px}
 .badge{color:#ffd166;font-weight:900;letter-spacing:2px}
-#message{min-height:25px;color:#86e3b0}
-.small{font-size:12px;color:#aaa}
+#message,#gameMessage{min-height:25px;color:#86e3b0}
+.word{font-size:36px;color:#ffd166;font-weight:1000}
+.choice{display:block;width:100%;background:#34304f;color:white;padding:13px;border-radius:12px;margin:8px 0}
+.choice:disabled{opacity:.5}
 footer{text-align:center;color:#77728f;font-size:12px;padding:25px}
 [hidden]{display:none!important}
-@media(max-width:500px){body{padding:12px}.players{grid-template-columns:1fr}.characters{font-size:55px}}
+@media(max-width:500px){body{padding:10px}.players{grid-template-columns:1fr}.characters{font-size:52px}}
 </style>
 </head>
 <body>
@@ -57,15 +52,12 @@ footer{text-align:center;color:#77728f;font-size:12px;padding:25px}
  <button class="btn secondary" onclick="showJoin()">ENTRAR COM CÓDIGO</button>
  <div id="joinArea" class="card" hidden>
   <input id="nameJoin" maxlength="16" placeholder="SEU NOME">
-  <input id="codeInput" placeholder="CÓDIGO DA SALA" maxlength="6">
+  <input id="codeInput" maxlength="6" placeholder="CÓDIGO DA SALA">
   <button class="btn primary" onclick="joinRoom()">ENTRAR</button>
  </div>
  <div class="card">
   <h3>🎮 COMO JOGAR?</h3>
-  <p>1. Receba uma palavra secreta.<br>
-  2. O impostor recebe apenas uma pista.<br>
-  3. Todos dão dicas.<br>
-  4. Vote em quem está mentindo!</p>
+  <p>Receba uma palavra secreta. O impostor recebe apenas uma pista. Todos dão dicas e depois votam em quem está mentindo!</p>
  </div>
  <p id="message"></p>
 </section>
@@ -84,255 +76,284 @@ footer{text-align:center;color:#77728f;font-size:12px;padding:25px}
   <p id="playerCount"></p>
  </div>
  <p id="lobbyMessage"></p>
- <button class="btn primary" onclick="startGame()">COMEÇAR PARTIDA →</button>
+ <button id="startBtn" class="btn primary" onclick="startGame()">COMEÇAR PARTIDA →</button>
  <button class="btn secondary" onclick="leaveRoom()">SAIR DA SALA</button>
 </section>
 
+<section id="game" class="screen">
+ <div class="badge" id="phaseBadge">RODADA</div>
+ <h1 id="gameTitle">Sua missão</h1>
+ <div class="card">
+  <p>SUA INFORMAÇÃO SECRETA</p>
+  <div class="word" id="secretWord">...</div>
+  <p id="secretHint"></p>
+  <p class="small">Não mostre esta tela aos outros jogadores!</p>
+ </div>
+ <div class="card" id="tipCard">
+  <h3>💬 DICAS</h3>
+  <div id="tipsList"></div>
+  <div id="tipForm">
+   <input id="tipInput" maxlength="100" placeholder="Escreva sua dica...">
+   <button class="btn primary" onclick="sendTip()">ENVIAR DICA</button>
+  </div>
+ </div>
+ <div class="card" id="voteCard" hidden>
+  <h3>🗳️ QUEM É O IMPOSTOR?</h3>
+  <div id="voteChoices"></div>
+  <p id="voteStatus"></p>
+ </div>
+ <div class="card" id="resultCard" hidden>
+  <h3>🏆 RESULTADO</h3>
+  <div class="word" id="resultText"></div>
+  <p id="resultDetails"></p>
+  <button class="btn primary" id="againBtn" onclick="startGame()">JOGAR OUTRA RODADA</button>
+ </div>
+ <p id="gameMessage"></p>
+ <button class="btn secondary" onclick="leaveRoom()">SAIR DA SALA</button>
+</section>
 <footer>BLEFE! · Feito para jogar com amigos.</footer>
 </div>
 
 <script>
-// 1. COLOQUE AQUI OS DADOS DO SEU SUPABASE
-const SUPABASE_URL = "https://crljbnnbseehdlqzrwan.supabase.co";
-const SUPABASE_KEY = "sb_publishable_8H4O_lp1eqLe8S3a2qTzag_HjpxWv3s";
-const supabaseClient = window.supabase.createClient(
- SUPABASE_URL,
- SUPABASE_KEY
-);
+const SUPABASE_URL="https://crljbnnbseehdlqzrwan.supabase.co";
+const SUPABASE_KEY="sb_publishable_8H4O_lp1eqLe8S3a2qTzag_HjpxWv3s";
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
-let currentUser = null;
-let currentRoom = null;
-let currentPlayer = null;
-let realtimeChannel = null;
+let currentUser=null,currentRoom=null,currentPlayer=null;
+let channel=null,players=[],currentRound=null,mySecret=null;
+let tips=[],votes=[],roundBusy=false;
+
+const $=id=>document.getElementById(id);
 
 function show(id){
  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
- document.getElementById(id).classList.add("active");
+ $(id).classList.add("active");
 }
-
-function message(text){
- document.getElementById("message").textContent = text;
+function say(t){$("message").textContent=t}
+function escapeHTML(v){
+ return String(v).replace(/[&<>"']/g,c=>({
+ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+ }[c]));
 }
-
-function makeCode(){
- return Math.random().toString(36).substring(2,8).toUpperCase();
-}
+function makeCode(){return Math.random().toString(36).slice(2,8).toUpperCase()}
 
 async function authenticate(){
- const {data,error} = await supabaseClient.auth.getSession();
- if(error) throw error;
-
- if(data.session){
-  currentUser = data.session.user;
-  return;
- }
-
- const {data:login,error:loginError} =
-  await supabaseClient.auth.signInAnonymously();
-
- if(loginError) throw loginError;
- currentUser = login.user;
+ const {data,error}=await db.auth.getSession();
+ if(error)throw error;
+ if(data.session){currentUser=data.session.user;return}
+ const login=await db.auth.signInAnonymously();
+ if(login.error)throw login.error;
+ currentUser=login.data.user;
 }
 
 async function createRoom(){
  try{
-  const name = prompt("Qual seu nome?");
-  if(!name || !name.trim()) return;
-
-  message("Criando sua sala...");
-
+  const name=prompt("Qual seu nome?");
+  if(!name?.trim())return;
+  say("Criando sala...");
   await authenticate();
-
-  let code = makeCode();
-
-  const {data:room,error:roomError} = await supabaseClient
-   .from("rooms")
-   .insert({
-    code,
-    owner_id:currentUser.id
-   })
-   .select()
-   .single();
-
-  if(roomError) throw roomError;
-
-  currentRoom = room;
-
-  await addPlayer(name.trim(),room.id);
-
+  const r=await db.from("rooms").insert({
+   code:makeCode(),owner_id:currentUser.id
+  }).select().single();
+  if(r.error)throw r.error;
+  currentRoom=r.data;
+  await addPlayer(name.trim());
   await enterLobby();
-
- }catch(error){
-  message("Erro: "+error.message);
-  console.error(error);
- }
+ }catch(e){say("Erro: "+e.message);console.error(e)}
 }
 
-function showJoin(){
- document.getElementById("joinArea").hidden = false;
-}
+function showJoin(){$("joinArea").hidden=false}
 
 async function joinRoom(){
  try{
-  const name = document.getElementById("nameJoin").value.trim();
-  const code = document.getElementById("codeInput").value.trim().toUpperCase();
-
-  if(!name || !code){
-   alert("Digite seu nome e o código da sala!");
-   return;
-  }
-
-  message("Procurando sala...");
-
+  const name=$("nameJoin").value.trim();
+  const code=$("codeInput").value.trim().toUpperCase();
+  if(!name||!code)throw Error("Digite seu nome e o código.");
+  say("Procurando sala...");
   await authenticate();
-
-  const {data:room,error} = await supabaseClient
-   .from("rooms")
-   .select("*")
-   .eq("code",code)
-   .maybeSingle();
-
-  if(error) throw error;
-  if(!room) throw new Error("Sala não encontrada. Confira o código.");
-
-  if(room.status !== "waiting"){
-   throw new Error("Essa partida já começou.");
-  }
-
-  currentRoom = room;
-
-  await addPlayer(name,room.id);
-
+  const r=await db.from("rooms").select("*").eq("code",code).maybeSingle();
+  if(r.error)throw r.error;
+  if(!r.data)throw Error("Sala não encontrada.");
+  if(r.data.status&&r.data.status!=="waiting")throw Error("A partida já começou.");
+  currentRoom=r.data;
+  await addPlayer(name);
   await enterLobby();
-
- }catch(error){
-  message("Erro: "+error.message);
-  console.error(error);
- }
+ }catch(e){say("Erro: "+e.message);console.error(e)}
 }
 
-async function addPlayer(name,roomId){
- const {data,error} = await supabaseClient
-  .from("players")
-  .insert({
-   room_id:roomId,
-   user_id:currentUser.id,
-   name:name,
-   avatar:"🤫"
-  })
-  .select()
-  .single();
-
- if(error) throw error;
- currentPlayer = data;
+async function addPlayer(name){
+ const r=await db.from("players").insert({
+  room_id:currentRoom.id,user_id:currentUser.id,name,avatar:"🤫"
+ }).select().single();
+ if(r.error)throw r.error;
+ currentPlayer=r.data;
 }
 
 async function enterLobby(){
- document.getElementById("roomCode").textContent = currentRoom.code;
+ $("roomCode").textContent=currentRoom.code;
  show("lobby");
-
  await refreshPlayers();
+ if(channel)await db.removeChannel(channel);
 
- realtimeChannel = supabaseClient
-  .channel("room-"+currentRoom.id)
-  .on(
-   "postgres_changes",
-   {
-    event:"*",
-    schema:"public",
-    table:"players",
-    filter:"room_id=eq."+currentRoom.id
-   },
-   ()=>refreshPlayers()
-  )
-  .subscribe((status)=>{
-   if(status==="CHANNEL_ERROR"){
-    document.getElementById("lobbyMessage").textContent =
-     "Erro na conexão em tempo real. Confira a configuração do Realtime.";
-   }
-  });
+ channel=db.channel("blefe-"+currentRoom.id)
+ .on("postgres_changes",{event:"*",schema:"public",table:"players",filter:"room_id=eq."+currentRoom.id},refreshPlayers)
+ .on("postgres_changes",{event:"*",schema:"public",table:"blefe_rounds",filter:"room_id=eq."+currentRoom.id},loadRound)
+ .on("postgres_changes",{event:"*",schema:"public",table:"blefe_tips",filter:"round_id=eq."+(currentRound?.id||"00000000-0000-0000-0000-000000000000")},loadTips)
+ .on("postgres_changes",{event:"*",schema:"public",table:"blefe_votes",filter:"round_id=eq."+ (currentRound?.id||"00000000-0000-0000-0000-000000000000")},loadVotes)
+ .subscribe();
+
+ await loadRound();
 }
 
 async function refreshPlayers(){
- if(!currentRoom) return;
-
- const {data,error} = await supabaseClient
-  .from("players")
-  .select("id,name,avatar,user_id")
-  .eq("room_id",currentRoom.id)
-  .order("joined_at");
-
- if(error){
-  console.error(error);
-  return;
- }
-
- const list = document.getElementById("playerList");
-
- list.innerHTML = data.map(p=>`
-  <div class="player">
-   ${escapeHTML(p.avatar || "🤫")}
-   ${escapeHTML(p.name)}
-   ${p.user_id===currentRoom.owner_id?" 👑":""}
-  </div>
- `).join("");
-
- document.getElementById("playerCount").textContent =
-  data.length+" jogador(es) na sala";
-
- const isOwner = currentUser.id===currentRoom.owner_id;
-
- document.getElementById("lobbyMessage").textContent =
-  isOwner
-   ? "Você é o anfitrião! Compartilhe o código com seus amigos."
-   : "Você entrou na sala! Aguarde o anfitrião.";
-}
-
-function escapeHTML(value){
- return String(value).replace(/[&<>"']/g,c=>({
-  "&":"&amp;",
-  "<":"&lt;",
-  ">":"&gt;",
-  '"':"&quot;",
-  "'":"&#39;"
- }[c]));
+ if(!currentRoom)return;
+ const r=await db.from("players").select("id,name,avatar,user_id")
+ .eq("room_id",currentRoom.id).order("joined_at");
+ if(r.error){console.error(r.error);return}
+ players=r.data||[];
+ $("playerList").innerHTML=players.map(p=>
+ `<div class="player">${escapeHTML(p.avatar||"🤫")} ${escapeHTML(p.name)}${p.user_id===currentRoom.owner_id?" 👑":""}</div>`
+ ).join("");
+ $("playerCount").textContent=players.length+" jogador(es) na sala";
+ const owner=currentUser.id===currentRoom.owner_id;
+ $("lobbyMessage").textContent=owner?"Você é o anfitrião! Inicie com pelo menos 3 jogadores.":"Aguardando o anfitrião iniciar.";
+ $("startBtn").disabled=!owner||players.length<3;
+ $("startBtn").style.opacity=$("startBtn").disabled?".45":"1";
 }
 
 async function copyCode(){
+ try{await navigator.clipboard.writeText(currentRoom.code);alert("Código copiado!")}
+ catch{alert("Código: "+currentRoom.code)}
+}
+
+async function startGame(){
  try{
-  await navigator.clipboard.writeText(currentRoom.code);
-  alert("Código copiado: "+currentRoom.code);
- }catch{
-  alert("Código da sala: "+currentRoom.code);
+  if(currentUser.id!==currentRoom.owner_id)throw Error("Somente o anfitrião pode iniciar.");
+  await refreshPlayers();
+  if(players.length<3)throw Error("São necessários pelo menos 3 jogadores.");
+  $("lobbyMessage").textContent="Sorteando os papéis...";
+  const r=await db.rpc("start_blefe_round",{p_room_id:currentRoom.id});
+  if(r.error)throw r.error;
+  await loadRound();
+ }catch(e){$("lobbyMessage").textContent="Erro: "+e.message;console.error(e)}
+}
+
+async function loadRound(){
+ if(!currentRoom)return;
+ const r=await db.from("blefe_rounds").select("*")
+ .eq("room_id",currentRoom.id).order("created_at",{ascending:false}).limit(1).maybeSingle();
+ if(r.error){console.error(r.error);return}
+ if(!r.data)return;
+ if(currentRound?.id===r.data.id && currentRound.phase===r.data.phase)return;
+ currentRound=r.data;
+ const s=await db.from("blefe_secrets").select("role,secret_word,hint")
+ .eq("round_id",currentRound.id).eq("player_id",currentPlayer.id).maybeSingle();
+ if(s.error){$("gameMessage").textContent="Erro ao carregar seu papel: "+s.error.message;return}
+ mySecret=s.data;
+ show("game");
+ $("phaseBadge").textContent="🎲 RODADA "+currentRound.round_number;
+ $("gameTitle").textContent=mySecret?.role==="impostor"?"Você é o impostor!":"Descubra quem está blefando";
+ $("secretWord").textContent=mySecret?.secret_word||"Carregando...";
+ $("secretHint").textContent=mySecret?.role==="impostor"?"Sua pista: "+(mySecret.hint||"Observe os outros."):"Você recebeu a palavra secreta.";
+ $("resultCard").hidden=currentRound.phase!=="result";
+ $("voteCard").hidden=currentRound.phase==="tips"||currentRound.phase==="result";
+ $("tipCard").hidden=currentRound.phase!=="tips";
+ $("tipForm").hidden=false;
+ await loadTips();
+ await loadVotes();
+ if(currentRound.phase==="result")renderResult();
+}
+
+async function loadTips(){
+ if(!currentRound)return;
+ const r=await db.from("blefe_tips").select("player_id,message,created_at")
+ .eq("round_id",currentRound.id).order("created_at");
+ if(r.error){console.error(r.error);return}
+ tips=r.data||[];
+ $("tipsList").innerHTML=tips.map(t=>{
+  const p=players.find(x=>x.id===t.player_id);
+  return `<div class="tip"><b>${escapeHTML(p?.name||"Jogador")}:</b> ${escapeHTML(t.message)}</div>`;
+ }).join("")||"<p>Aguardando as dicas...</p>";
+ const already=tips.some(t=>t.player_id===currentPlayer.id);
+ $("tipForm").hidden=already||currentRound.phase!=="tips";
+ if(tips.length===players.length&&currentRound.phase==="tips"){
+  $("gameMessage").textContent="Todas as dicas foram enviadas. A votação será liberada em breve.";
+  if(currentUser.id===currentRoom.owner_id){
+   const u=await db.from("blefe_rounds").update({phase:"voting"}).eq("id",currentRound.id);
+   if(u.error)console.warn(u.error.message);
+  }
  }
+}
+
+async function sendTip(){
+ const message=$("tipInput").value.trim();
+ if(!message)return;
+ try{
+  const r=await db.from("blefe_tips").insert({
+   round_id:currentRound.id,player_id:currentPlayer.id,message
+  });
+  if(r.error)throw r.error;
+  $("tipInput").value="";
+  await loadTips();
+ }catch(e){$("gameMessage").textContent="Erro: "+e.message}
+}
+
+async function loadVotes(){
+ if(!currentRound)return;
+ const r=await db.from("blefe_votes").select("*").eq("round_id",currentRound.id);
+ if(r.error){console.error(r.error);return}
+ votes=r.data||[];
+ if(currentRound.phase==="voting"){
+  $("voteCard").hidden=false;
+  $("tipCard").hidden=false;
+  $("voteChoices").innerHTML=players.map(p=>
+   `<button class="choice" ${votes.some(v=>v.voter_id===currentPlayer.id)?"disabled":""} onclick="castVote('${p.id}')">${escapeHTML(p.name)}</button>`
+  ).join("");
+  $("voteStatus").textContent=votes.length+" de "+players.length+" votos registrados.";
+ }
+ if(votes.length===players.length&&currentUser.id===currentRoom.owner_id&&currentRound.phase==="voting"){
+  await finishRound();
+ }
+}
+
+async function castVote(target){
+ try{
+  const r=await db.from("blefe_votes").insert({
+   round_id:currentRound.id,voter_id:currentPlayer.id,target_id:target
+  });
+  if(r.error)throw r.error;
+  await loadVotes();
+ }catch(e){$("voteStatus").textContent=e.message}
+}
+
+async function finishRound(){
+ if(roundBusy)return;
+ roundBusy=true;
+ try{
+  const r=await db.rpc("finish_blefe_round",{p_round_id:currentRound.id});
+  if(r.error)throw r.error;
+  await loadRound();
+ }catch(e){$("gameMessage").textContent="Erro no resultado: "+e.message}
+ finally{roundBusy=false}
+}
+
+function renderResult(){
+ $("resultCard").hidden=false;
+ $("voteCard").hidden=true;
+ $("tipCard").hidden=true;
+ $("resultText").textContent=currentRound.caught?"IMPOSTOR DESCOBERTO! 🎉":"O IMPOSTOR ESCAPOU! 😈";
+ const imp=players.find(p=>p.id===currentRound.impostor_id);
+ $("resultDetails").textContent="O impostor era "+(imp?.name||"desconhecido")+". A palavra era: "+currentRound.result_word;
+ $("againBtn").hidden=currentUser.id!==currentRoom.owner_id;
 }
 
 async function leaveRoom(){
- if(realtimeChannel){
-  await supabaseClient.removeChannel(realtimeChannel);
-  realtimeChannel = null;
- }
-
+ if(channel){await db.removeChannel(channel);channel=null}
  if(currentPlayer){
-  await supabaseClient
-   .from("players")
-   .delete()
-   .eq("id",currentPlayer.id);
+  await db.from("players").delete().eq("id",currentPlayer.id);
  }
-
- currentRoom = null;
- currentPlayer = null;
- show("home");
- message("Você saiu da sala.");
-}
-
-function startGame(){
- if(currentUser.id!==currentRoom.owner_id){
-  alert("Somente o anfitrião pode iniciar a partida.");
-  return;
- }
-
- alert("O lobby online está funcionando! A próxima etapa vai ativar a partida sincronizada, com palavras e papéis secretos.");
+ currentRoom=null;currentPlayer=null;currentRound=null;mySecret=null;
+ tips=[];votes=[];show("home");say("Você saiu da sala.");
 }
 </script>
 </body>
