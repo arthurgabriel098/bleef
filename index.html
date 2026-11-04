@@ -6,13 +6,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BLEFE! - Party Game</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}
-body{
- margin:0;background:#17152b;color:white;
- font-family:Nunito,sans-serif;
- min-height:100vh;padding:20px;
-}
+body{margin:0;background:#17152b;color:white;font-family:Nunito,sans-serif;min-height:100vh;padding:20px}
 button,input{font:inherit}
 button{cursor:pointer;border:0}
 .app{max-width:850px;margin:auto}
@@ -26,58 +23,31 @@ h1{font-size:clamp(45px,9vw,75px);line-height:1;margin:20px 0}
 h1 span{color:#ffd166}
 p{color:#b8b3d0;line-height:1.6}
 .characters{font-size:75px;margin:25px}
-.btn{
- padding:15px 24px;border-radius:14px;
- font-weight:900;margin:7px;transition:.2s;
-}
+.btn{padding:15px 24px;border-radius:14px;font-weight:900;margin:7px;transition:.2s}
 .btn:hover{transform:translateY(-3px)}
 .primary{background:#ffd166;color:#28213b;box-shadow:0 5px #c69b40}
 .secondary{background:#34304f;color:white}
-.card{
- background:#24213e;border:1px solid #ffffff18;
- padding:22px;border-radius:20px;
- margin:15px auto;max-width:520px;
-}
-input{
- background:#17152b;color:white;border:2px solid #514b70;
- padding:13px;border-radius:12px;
- width:100%;margin:8px 0;text-align:center;
- outline:none;
-}
+.card{background:#24213e;border:1px solid #ffffff18;padding:22px;border-radius:20px;margin:15px auto;max-width:520px}
+input{background:#17152b;color:white;border:2px solid #514b70;padding:13px;border-radius:12px;width:100%;margin:8px 0;text-align:center;outline:none}
 input:focus{border-color:#ffd166}
 .code{font-size:42px;color:#ffd166;letter-spacing:8px;font-weight:1000}
 .players{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.player{
- background:#34304f;padding:12px;border-radius:12px;
- font-weight:900;
-}
-.secret{font-size:36px;color:#ffd166;font-weight:1000}
-.option{
- display:block;width:100%;padding:15px;margin:9px 0;
- background:#34304f;color:white;border-radius:12px;
- font-weight:900;border:2px solid transparent;
-}
-.option:hover{border-color:#ffd166}
-.option:disabled{opacity:.5;cursor:not-allowed}
-.small{font-size:12px;color:#aaa}
+.player{background:#34304f;padding:12px;border-radius:12px;font-weight:900}
 .badge{color:#ffd166;font-weight:900;letter-spacing:2px}
 #message{min-height:25px;color:#86e3b0}
+.small{font-size:12px;color:#aaa}
 footer{text-align:center;color:#77728f;font-size:12px;padding:25px}
-@media(max-width:500px){
- body{padding:12px}
- .players{grid-template-columns:1fr}
- .characters{font-size:55px}
-}
+[hidden]{display:none!important}
+@media(max-width:500px){body{padding:12px}.players{grid-template-columns:1fr}.characters{font-size:55px}}
 </style>
 </head>
 <body>
 <div class="app">
 <header>
  <div class="logo">🤥 BLEFE<span>!</span></div>
- <div class="tag">PARTY GAME</div>
+ <div class="tag">PARTY GAME ONLINE</div>
 </header>
 
-<!-- INÍCIO -->
 <section id="home" class="screen active">
  <div class="badge">🕵️ CONFIE EM NINGUÉM</div>
  <h1>Todo mundo tem<br>algo a <span>esconder.</span></h1>
@@ -86,6 +56,7 @@ footer{text-align:center;color:#77728f;font-size:12px;padding:25px}
  <button class="btn primary" onclick="createRoom()">CRIAR SALA →</button>
  <button class="btn secondary" onclick="showJoin()">ENTRAR COM CÓDIGO</button>
  <div id="joinArea" class="card" hidden>
+  <input id="nameJoin" maxlength="16" placeholder="SEU NOME">
   <input id="codeInput" placeholder="CÓDIGO DA SALA" maxlength="6">
   <button class="btn primary" onclick="joinRoom()">ENTRAR</button>
  </div>
@@ -96,11 +67,11 @@ footer{text-align:center;color:#77728f;font-size:12px;padding:25px}
   3. Todos dão dicas.<br>
   4. Vote em quem está mentindo!</p>
  </div>
+ <p id="message"></p>
 </section>
 
-<!-- SALA -->
 <section id="lobby" class="screen">
- <div class="badge">🎉 SALA PRIVADA</div>
+ <div class="badge">🎉 SALA PRIVADA ONLINE</div>
  <h1>Chame sua <span>equipe!</span></h1>
  <div class="card">
   <p>CÓDIGO DA SALA</p>
@@ -108,184 +79,261 @@ footer{text-align:center;color:#77728f;font-size:12px;padding:25px}
   <button class="btn secondary" onclick="copyCode()">COPIAR CÓDIGO</button>
  </div>
  <div class="card">
-  <h3>👥 JOGADORES</h3>
+  <h3>👥 JOGADORES ONLINE</h3>
   <div id="playerList" class="players"></div>
+  <p id="playerCount"></p>
  </div>
  <p id="lobbyMessage"></p>
  <button class="btn primary" onclick="startGame()">COMEÇAR PARTIDA →</button>
- <button class="btn secondary" onclick="goHome()">SAIR</button>
+ <button class="btn secondary" onclick="leaveRoom()">SAIR DA SALA</button>
 </section>
 
-<!-- JOGO -->
-<section id="game" class="screen">
- <div class="badge" id="round">RODADA 1</div>
- <h1 id="gameTitle">Sua identidade</h1>
- <div class="card">
-  <div id="roleEmoji" class="characters">🕵️</div>
-  <div id="secretWord" class="secret">???</div>
-  <p id="roleText">Não mostre para ninguém!</p>
- </div>
- <div class="card">
-  <h3 id="phaseTitle">💬 HORA DAS DICAS</h3>
-  <div id="gameContent"></div>
- </div>
- <p id="gameMessage"></p>
- <button class="btn secondary" onclick="goHome()">SAIR DA PARTIDA</button>
-</section>
-
-<!-- RESULTADO -->
-<section id="result" class="screen">
- <div class="characters">🏆</div>
- <div class="badge">RESULTADO</div>
- <h1 id="resultTitle">Fim de jogo!</h1>
- <div class="card">
-  <p id="resultText"></p>
- </div>
- <button class="btn primary" onclick="nextRound()">JOGAR NOVAMENTE →</button>
- <button class="btn secondary" onclick="goHome()">VOLTAR AO MENU</button>
-</section>
 <footer>BLEFE! · Feito para jogar com amigos.</footer>
 </div>
 
 <script>
-const words=[
- ["Praia","Areia, mar, sol"],
- ["Pizza","Queijo, forno, fatia"],
- ["Futebol","Gol, campo, torcida"],
- ["Cinema","Pipoca, tela, filme"],
- ["Aeroporto","Avião, viagem, mala"],
- ["Hambúrguer","Pão, carne, lanche"],
- ["Escola","Prova, aula, recreio"],
- ["Videogame","Controle, fase, console"],
- ["Dinossauro","Fóssil, pré-história, gigante"],
- ["Churrasco","Grelha, carne, domingo"],
- ["Geladeira","Frio, cozinha, comida"],
- ["Robô","Metal, máquina, futuro"],
- ["Cachorro","Latido, passeio, pet"]
-];
+// 1. COLOQUE AQUI OS DADOS DO SEU SUPABASE
+const SUPABASE_URL = "https://crljbnnbseehdlqzrwan.supabase.co/rest/v1/";
+const SUPABASE_KEY = "sb_publishable_8H4O_lp1eqLe8S3a2qTzag_HjpxWv3s";
 
-let players=[];
-let room="";
-let round=1;
-let word="";
-let hint="";
-let impostor=0;
-let clues={};
-let votes={};
-let myIndex=0;
-let phase="";
+const supabaseClient = window.supabase.createClient(
+ SUPABASE_URL,
+ SUPABASE_KEY
+);
+
+let currentUser = null;
+let currentRoom = null;
+let currentPlayer = null;
+let realtimeChannel = null;
 
 function show(id){
  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
  document.getElementById(id).classList.add("active");
 }
-function askName(){
- let n=prompt("Qual seu nome?");
- return n&&n.trim()?n.trim().slice(0,16):null;
+
+function message(text){
+ document.getElementById("message").textContent = text;
 }
-function createRoom(){
- const name=askName();
- if(!name)return;
- room=Math.random().toString(36).slice(2,8).toUpperCase();
- players=[{name,avatar:"🤫"}];
- myIndex=0;
- updateLobby();
- show("lobby");
+
+function makeCode(){
+ return Math.random().toString(36).substring(2,8).toUpperCase();
 }
+
+async function authenticate(){
+ const {data,error} = await supabaseClient.auth.getSession();
+ if(error) throw error;
+
+ if(data.session){
+  currentUser = data.session.user;
+  return;
+ }
+
+ const {data:login,error:loginError} =
+  await supabaseClient.auth.signInAnonymously();
+
+ if(loginError) throw loginError;
+ currentUser = login.user;
+}
+
+async function createRoom(){
+ try{
+  const name = prompt("Qual seu nome?");
+  if(!name || !name.trim()) return;
+
+  message("Criando sua sala...");
+
+  await authenticate();
+
+  let code = makeCode();
+
+  const {data:room,error:roomError} = await supabaseClient
+   .from("rooms")
+   .insert({
+    code,
+    owner_id:currentUser.id
+   })
+   .select()
+   .single();
+
+  if(roomError) throw roomError;
+
+  currentRoom = room;
+
+  await addPlayer(name.trim(),room.id);
+
+  await enterLobby();
+
+ }catch(error){
+  message("Erro: "+error.message);
+  console.error(error);
+ }
+}
+
 function showJoin(){
- document.getElementById("joinArea").hidden=false;
+ document.getElementById("joinArea").hidden = false;
 }
-function joinRoom(){
- alert("Esta versão ainda funciona somente localmente. Para entrar de outro celular ou computador, precisamos conectar o Supabase.");
+
+async function joinRoom(){
+ try{
+  const name = document.getElementById("nameJoin").value.trim();
+  const code = document.getElementById("codeInput").value.trim().toUpperCase();
+
+  if(!name || !code){
+   alert("Digite seu nome e o código da sala!");
+   return;
+  }
+
+  message("Procurando sala...");
+
+  await authenticate();
+
+  const {data:room,error} = await supabaseClient
+   .from("rooms")
+   .select("*")
+   .eq("code",code)
+   .maybeSingle();
+
+  if(error) throw error;
+  if(!room) throw new Error("Sala não encontrada. Confira o código.");
+
+  if(room.status !== "waiting"){
+   throw new Error("Essa partida já começou.");
+  }
+
+  currentRoom = room;
+
+  await addPlayer(name,room.id);
+
+  await enterLobby();
+
+ }catch(error){
+  message("Erro: "+error.message);
+  console.error(error);
+ }
 }
-function updateLobby(){
- document.getElementById("roomCode").textContent=room;
- document.getElementById("playerList").innerHTML=
- players.map(p=>`<div class="player">${p.avatar} ${escapeHTML(p.name)}</div>`).join("");
- document.getElementById("lobbyMessage").textContent=
- "Adicione jogadores para testar. Multiplayer online será ativado na próxima etapa.";
+
+async function addPlayer(name,roomId){
+ const {data,error} = await supabaseClient
+  .from("players")
+  .insert({
+   room_id:roomId,
+   user_id:currentUser.id,
+   name:name,
+   avatar:"🤫"
+  })
+  .select()
+  .single();
+
+ if(error) throw error;
+ currentPlayer = data;
 }
-function escapeHTML(s){
- return String(s).replace(/[&<>"']/g,c=>({
- "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+
+async function enterLobby(){
+ document.getElementById("roomCode").textContent = currentRoom.code;
+ show("lobby");
+
+ await refreshPlayers();
+
+ realtimeChannel = supabaseClient
+  .channel("room-"+currentRoom.id)
+  .on(
+   "postgres_changes",
+   {
+    event:"*",
+    schema:"public",
+    table:"players",
+    filter:"room_id=eq."+currentRoom.id
+   },
+   ()=>refreshPlayers()
+  )
+  .subscribe((status)=>{
+   if(status==="CHANNEL_ERROR"){
+    document.getElementById("lobbyMessage").textContent =
+     "Erro na conexão em tempo real. Confira a configuração do Realtime.";
+   }
+  });
+}
+
+async function refreshPlayers(){
+ if(!currentRoom) return;
+
+ const {data,error} = await supabaseClient
+  .from("players")
+  .select("id,name,avatar,user_id")
+  .eq("room_id",currentRoom.id)
+  .order("joined_at");
+
+ if(error){
+  console.error(error);
+  return;
+ }
+
+ const list = document.getElementById("playerList");
+
+ list.innerHTML = data.map(p=>`
+  <div class="player">
+   ${escapeHTML(p.avatar || "🤫")}
+   ${escapeHTML(p.name)}
+   ${p.user_id===currentRoom.owner_id?" 👑":""}
+  </div>
+ `).join("");
+
+ document.getElementById("playerCount").textContent =
+  data.length+" jogador(es) na sala";
+
+ const isOwner = currentUser.id===currentRoom.owner_id;
+
+ document.getElementById("lobbyMessage").textContent =
+  isOwner
+   ? "Você é o anfitrião! Compartilhe o código com seus amigos."
+   : "Você entrou na sala! Aguarde o anfitrião.";
+}
+
+function escapeHTML(value){
+ return String(value).replace(/[&<>"']/g,c=>({
+  "&":"&amp;",
+  "<":"&lt;",
+  ">":"&gt;",
+  '"':"&quot;",
+  "'":"&#39;"
  }[c]));
 }
-function copyCode(){
- navigator.clipboard.writeText(room)
- .then(()=>alert("Código copiado: "+room))
- .catch(()=>alert("Código: "+room));
+
+async function copyCode(){
+ try{
+  await navigator.clipboard.writeText(currentRoom.code);
+  alert("Código copiado: "+currentRoom.code);
+ }catch{
+  alert("Código da sala: "+currentRoom.code);
+ }
 }
-function goHome(){show("home")}
+
+async function leaveRoom(){
+ if(realtimeChannel){
+  await supabaseClient.removeChannel(realtimeChannel);
+  realtimeChannel = null;
+ }
+
+ if(currentPlayer){
+  await supabaseClient
+   .from("players")
+   .delete()
+   .eq("id",currentPlayer.id);
+ }
+
+ currentRoom = null;
+ currentPlayer = null;
+ show("home");
+ message("Você saiu da sala.");
+}
+
 function startGame(){
- if(players.length<1)return;
- const selected=words[Math.floor(Math.random()*words.length)];
- word=selected[0];
- hint=selected[1].split(",")[Math.floor(Math.random()*3)];
- impostor=Math.floor(Math.random()*players.length);
- clues={};votes={};
- show("game");
- renderRole();
- renderClues();
-}
-function renderRole(){
- document.getElementById("round").textContent="RODADA "+round;
- document.getElementById("roleEmoji").textContent=
- myIndex===impostor?"🎭":"🤫";
- document.getElementById("secretWord").textContent=
- myIndex===impostor?hint:word;
- document.getElementById("roleText").textContent=
- myIndex===impostor?
- "Você é o impostor! Finja que conhece a palavra.":
- "Você é inocente! Não revele a palavra diretamente.";
-}
-function renderClues(){
- phase="clues";
- document.getElementById("phaseTitle").textContent="💬 HORA DAS DICAS";
- document.getElementById("gameContent").innerHTML=`
- <p>Escreva uma dica sem revelar diretamente a palavra.</p>
- <input id="clueInput" maxlength="45" placeholder="Sua dica...">
- <button class="btn primary" onclick="sendClue()">ENVIAR DICA</button>
- <div id="clueList"></div>
- <button class="btn secondary" onclick="renderVoting()">IR PARA VOTAÇÃO</button>
- `;
-}
-function sendClue(){
- const clue=document.getElementById("clueInput").value.trim();
- if(!clue)return alert("Escreva uma dica!");
- clues[myIndex]=clue;
- document.getElementById("clueList").innerHTML=
- Object.entries(clues).map(([i,c])=>
- `<p>${escapeHTML(players[i].name)}: ${escapeHTML(c)}</p>`
- ).join("");
- document.getElementById("gameMessage").textContent="Dica registrada!";
-}
-function renderVoting(){
- phase="voting";
- document.getElementById("phaseTitle").textContent="🗳️ QUEM ESTÁ MENTINDO?";
- document.getElementById("gameContent").innerHTML=`
- <p>Escolha quem você acha que é o impostor.</p>
- ${players.map((p,i)=>`
- <button class="option" onclick="vote(${i})"
- ${i===myIndex?"disabled":""}>
- ${p.avatar} ${escapeHTML(p.name)}
- </button>`).join("")}
- `;
-}
-function vote(index){
- votes[myIndex]=index;
- const count={};
- Object.values(votes).forEach(v=>count[v]=(count[v]||0)+1);
- const winner=Object.entries(count).sort((a,b)=>b[1]-a[1])[0];
- const caught=winner&&Number(winner[0])===impostor;
- document.getElementById("resultTitle").textContent=
- caught?"O impostor foi descoberto!":"O impostor escapou!";
- document.getElementById("resultText").textContent=
- `O impostor era ${players[impostor].name}. A palavra era ${word}.`;
- show("result");
-}
-function nextRound(){
- round++;
- startGame();
+ if(currentUser.id!==currentRoom.owner_id){
+  alert("Somente o anfitrião pode iniciar a partida.");
+  return;
+ }
+
+ alert("O lobby online está funcionando! A próxima etapa vai ativar a partida sincronizada, com palavras e papéis secretos.");
 }
 </script>
 </body>
