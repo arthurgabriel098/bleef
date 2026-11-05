@@ -28,7 +28,7 @@ p{color:var(--muted);line-height:1.6}
 .btn:hover{transform:translateY(-2px)}
 .primary{background:var(--green);color:#10150c;box-shadow:0 5px #6b9b19}
 .secondary{background:#202b24;color:white;border:1px solid #35473a}
-.card{background:var(--card);border:1px solid #293a2e;padding:20px;border-radius:18px;margin:14px auto;max-width:560px}
+.card{background:var(--card);border:1px solid #293a2e;padding:20px;border-radius:18px;margin:14px auto;max-width:650px}
 input{background:#090f0b;color:white;border:1px solid #405344;padding:14px;border-radius:10px;width:100%;margin:8px 0;text-align:center;outline:none}
 input:focus{border-color:var(--green)}
 .code{font-size:40px;color:var(--green);letter-spacing:8px;font-weight:1000}
@@ -39,7 +39,15 @@ input:focus{border-color:var(--green)}
 .word{font-size:36px;color:var(--green);font-weight:1000}
 .choice{display:block;width:100%;background:#202b24;color:white;padding:14px;border-radius:10px;margin:8px 0;border:1px solid #35473a}
 .choice:hover{border-color:var(--green)}
-.choice:disabled{opacity:.5}
+.choice:disabled{opacity:.5;cursor:not-allowed}
+.question{font-size:23px;font-weight:900;color:var(--green);line-height:1.3}
+.question-block{background:#17231b;border:1px solid #35473a;padding:14px;border-radius:12px;margin:12px 0;text-align:left}
+.question-block h4{margin:0 0 10px;color:var(--green)}
+.answer{background:#202b24;padding:12px;border-radius:9px;margin:7px 0;overflow-wrap:anywhere}
+.answer b{color:var(--green)}
+.progress{height:8px;background:#293a2e;border-radius:20px;overflow:hidden;margin:12px 0}
+.progress div{height:100%;background:var(--green);transition:width .3s}
+.small{font-size:13px;color:var(--muted)}
 footer{text-align:center;color:#66736a;font-size:12px;padding:25px}
 [hidden]{display:none!important}
 @media(max-width:500px){
@@ -47,6 +55,7 @@ footer{text-align:center;color:#66736a;font-size:12px;padding:25px}
  .players{grid-template-columns:1fr}
  .characters{font-size:52px}
  .btn{width:100%;margin:7px 0}
+ .question{font-size:20px}
 }
 </style>
 </head>
@@ -61,14 +70,11 @@ footer{text-align:center;color:#66736a;font-size:12px;padding:25px}
 
 <section id="home" class="screen active">
  <div class="badge">⚽ O JOGO DA DESCONFIANÇA</div>
-
  <h1>Quem entende<br>de <span>futebol?</span></h1>
-
  <div class="characters">⚽ 🏆 👀</div>
-
  <p>
- Todos conhecem um jogador.<br>
- Menos o impostor. Descubra quem está blefando!
+  Todos conhecem um jogador.<br>
+  Menos o impostor. Descubra quem está blefando!
  </p>
 
  <button class="btn primary" onclick="createRoom()">CRIAR SALA →</button>
@@ -83,12 +89,11 @@ footer{text-align:center;color:#66736a;font-size:12px;padding:25px}
  <div class="card">
   <h3>🏟️ COMO JOGAR?</h3>
   <p>
-   A maioria recebe o nome de um jogador de futebol.
-   O impostor recebe apenas uma pista indireta.
-   Todos dão dicas e depois votam para descobrir quem é o impostor.
+   Todos recebem o nome de um jogador de futebol,
+   menos o impostor, que recebe uma pista.
+   Respondam às perguntas e descubram quem está blefando!
   </p>
  </div>
-
  <p id="message"></p>
 </section>
 
@@ -109,7 +114,6 @@ footer{text-align:center;color:#66736a;font-size:12px;padding:25px}
  </div>
 
  <p id="lobbyMessage"></p>
-
  <button id="startBtn" class="btn primary" onclick="startGame()">INICIAR PARTIDA →</button>
  <button class="btn secondary" onclick="leaveRoom()">SAIR DA SALA</button>
 </section>
@@ -126,16 +130,27 @@ footer{text-align:center;color:#66736a;font-size:12px;padding:25px}
  </div>
 
  <div class="card" id="tipCard">
-  <h3>💬 RODADA DE DICAS</h3>
-  <div id="tipsList"></div>
+  <h3>🧠 PERGUNTAS SOBRE O JOGADOR</h3>
+  <p id="questionProgress"></p>
+  <div class="progress"><div id="progressBar" style="width:0%"></div></div>
+
+  <div class="question" id="currentQuestion"></div>
+  <p class="small">Todos respondem à mesma pergunta. As respostas ficam visíveis para a sala inteira.</p>
+
   <div id="tipForm">
-   <input id="tipInput" maxlength="100" placeholder="Digite sua dica...">
-   <button class="btn primary" onclick="sendTip()">ENVIAR DICA</button>
+   <input id="tipInput" maxlength="200" placeholder="Digite sua resposta...">
+   <button class="btn primary" id="sendTipBtn" onclick="sendTip()">ENVIAR RESPOSTA</button>
   </div>
+
+  <p id="answerStatus" class="small"></p>
+
+  <h3>📢 RESPOSTAS DA PARTIDA</h3>
+  <div id="tipsList"></div>
  </div>
 
  <div class="card" id="voteCard" hidden>
   <h3>🗳️ QUEM É O IMPOSTOR?</h3>
+  <p>Escolha quem você acredita que está tentando descobrir o jogador secreto.</p>
   <div id="voteChoices"></div>
   <p id="voteStatus"></p>
  </div>
@@ -157,12 +172,20 @@ footer{text-align:center;color:#66736a;font-size:12px;padding:25px}
 <script>
 const SUPABASE_URL="https://crljbnnbseehdlqzrwan.supabase.co";
 const SUPABASE_KEY="sb_publishable_8H4O_lp1eqLe8S3a2qTzag_HjpxWv3s";
-
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+const QUESTIONS=[
+ "Quantas Bolas de Ouro esse jogador conquistou?",
+ "Quantos títulos importantes você acredita que ele conquistou na carreira?",
+ "Por quais clubes esse jogador já passou?",
+ "Em qual faixa você colocaria esse jogador entre os maiores da história? (Top 5, Top 10, Top 20...)",
+ "Qual é a posição dele e uma característica marcante do seu futebol?"
+];
 
 let currentUser=null,currentRoom=null,currentPlayer=null;
 let channel=null,players=[],currentRound=null,mySecret=null;
-let tips=[],votes=[],roundBusy=false;
+let tips=[],votes=[];
+let loadingRound=false,advanceBusy=false,finishBusy=false;
 
 const $=id=>document.getElementById(id);
 
@@ -277,19 +300,24 @@ async function enterLobby(){
  .on("postgres_changes",{
   event:"*",schema:"public",table:"players",
   filter:"room_id=eq."+currentRoom.id
- },refreshPlayers)
+ },async()=>{
+  await refreshPlayers();
+  if(currentRound)await loadTips();
+ })
  .on("postgres_changes",{
   event:"*",schema:"public",table:"blefe_rounds",
   filter:"room_id=eq."+currentRoom.id
  },loadRound)
  .on("postgres_changes",{
-  event:"*",schema:"public",table:"blefe_tips",
-  filter:"round_id=eq."+(currentRound?.id||"00000000-0000-0000-0000-000000000000")
- },loadTips)
+  event:"*",schema:"public",table:"blefe_tips"
+ },async()=>{
+  if(currentRound)await loadTips();
+ })
  .on("postgres_changes",{
-  event:"*",schema:"public",table:"blefe_votes",
-  filter:"round_id=eq."+(currentRound?.id||"00000000-0000-0000-0000-000000000000")
- },loadVotes)
+  event:"*",schema:"public",table:"blefe_votes"
+ },async()=>{
+  if(currentRound)await loadVotes();
+ })
  .subscribe();
 
  await loadRound();
@@ -366,72 +394,72 @@ async function startGame(){
 }
 
 async function loadRound(){
- if(!currentRoom)return;
+ if(!currentRoom||loadingRound)return;
+ loadingRound=true;
 
- const r=await db.from("blefe_rounds")
- .select("*")
- .eq("room_id",currentRoom.id)
- .order("created_at",{ascending:false})
- .limit(1)
- .maybeSingle();
+ try{
+  const r=await db.from("blefe_rounds")
+  .select("*")
+  .eq("room_id",currentRoom.id)
+  .order("created_at",{ascending:false})
+  .limit(1)
+  .maybeSingle();
 
- if(r.error){
-  console.error(r.error);
-  return;
+  if(r.error)throw r.error;
+  if(!r.data)return;
+
+  const changed=currentRound?.id!==r.data.id;
+  currentRound=r.data;
+
+  if(changed||!mySecret){
+   const s=await db.from("blefe_secrets")
+   .select("role,secret_word,hint")
+   .eq("round_id",currentRound.id)
+   .eq("player_id",currentPlayer.id)
+   .maybeSingle();
+
+   if(s.error)throw s.error;
+   mySecret=s.data;
+  }
+
+  show("game");
+
+  $("phaseBadge").textContent="⚽ RODADA "+currentRound.round_number;
+
+  $("gameTitle").textContent=
+   mySecret?.role==="impostor"
+   ?"VOCÊ É O IMPOSTOR!"
+   :"DESCUBRA QUEM ESTÁ BLEFANDO";
+
+  $("secretWord").textContent=mySecret?.secret_word||"Carregando...";
+
+  $("secretHint").textContent=
+   mySecret?.role==="impostor"
+   ?"Sua pista: "+(mySecret.hint||"Observe as respostas dos outros jogadores.")
+   :"Você recebeu o jogador secreto.";
+
+  $("resultCard").hidden=currentRound.phase!=="result";
+  $("voteCard").hidden=currentRound.phase!=="voting";
+  $("tipCard").hidden=currentRound.phase!=="tips";
+
+  await loadTips();
+  await loadVotes();
+
+  if(currentRound.phase==="result")renderResult();
+
+ }catch(e){
+  $("gameMessage").textContent="Erro ao carregar rodada: "+e.message;
+  console.error(e);
+ }finally{
+  loadingRound=false;
  }
-
- if(!r.data)return;
-
- if(currentRound?.id===r.data.id&&currentRound.phase===r.data.phase)
-  return;
-
- currentRound=r.data;
-
- const s=await db.from("blefe_secrets")
- .select("role,secret_word,hint")
- .eq("round_id",currentRound.id)
- .eq("player_id",currentPlayer.id)
- .maybeSingle();
-
- if(s.error){
-  $("gameMessage").textContent="Erro ao carregar seu papel: "+s.error.message;
-  return;
- }
-
- mySecret=s.data;
-
- show("game");
-
- $("phaseBadge").textContent="⚽ RODADA "+currentRound.round_number;
-
- $("gameTitle").textContent=
-  mySecret?.role==="impostor"
-  ?"VOCÊ É O IMPOSTOR!"
-  :"DESCUBRA QUEM ESTÁ BLEFANDO";
-
- $("secretWord").textContent=mySecret?.secret_word||"Carregando...";
-
- $("secretHint").textContent=
-  mySecret?.role==="impostor"
-  ?"Sua pista: "+(mySecret.hint||"Observe os outros jogadores.")
-  :"Você recebeu o jogador secreto.";
-
- $("resultCard").hidden=currentRound.phase!=="result";
- $("voteCard").hidden=currentRound.phase==="tips"||currentRound.phase==="result";
- $("tipCard").hidden=currentRound.phase!=="tips";
- $("tipForm").hidden=false;
-
- await loadTips();
- await loadVotes();
-
- if(currentRound.phase==="result")renderResult();
 }
 
 async function loadTips(){
  if(!currentRound)return;
 
  const r=await db.from("blefe_tips")
- .select("player_id,message,created_at")
+ .select("player_id,message,created_at,question_index")
  .eq("round_id",currentRound.id)
  .order("created_at");
 
@@ -442,50 +470,140 @@ async function loadTips(){
 
  tips=r.data||[];
 
- $("tipsList").innerHTML=tips.map(t=>{
-  const p=players.find(x=>x.id===t.player_id);
+ const currentIndex=Number(currentRound.current_question||0);
+ const totalQuestions=QUESTIONS.length;
 
-  return `<div class="tip">
-   <b>${escapeHTML(p?.name||"Jogador")}:</b>
-   ${escapeHTML(t.message)}
-  </div>`;
- }).join("")||"<p>Aguardando as dicas...</p>";
+ $("currentQuestion").textContent=
+  QUESTIONS[currentIndex]||"Perguntas concluídas!";
 
- const already=tips.some(t=>t.player_id===currentPlayer.id);
+ $("questionProgress").textContent=
+  "PERGUNTA "+Math.min(currentIndex+1,totalQuestions)+" DE "+totalQuestions;
 
- $("tipForm").hidden=already||currentRound.phase!=="tips";
+ $("progressBar").style.width=
+  (Math.min(currentIndex+1,totalQuestions)/totalQuestions*100)+"%";
 
- if(tips.length===players.length&&currentRound.phase==="tips"){
-  $("gameMessage").textContent="Todas as dicas foram enviadas!";
+ let html="";
 
-  if(currentUser.id===currentRoom.owner_id){
-   const u=await db.from("blefe_rounds")
-   .update({phase:"voting"})
-   .eq("id",currentRound.id);
+ for(let i=0;i<totalQuestions;i++){
+  const answers=tips.filter(t=>Number(t.question_index||0)===i);
 
-   if(u.error)console.warn(u.error.message);
+  if(i>currentIndex&&currentRound.phase!=="result")continue;
+  if(i===currentIndex&&currentRound.phase!=="tips"&&answers.length===0)continue;
+
+  html+=`<div class="question-block">
+   <h4>${i+1}. ${escapeHTML(QUESTIONS[i])}</h4>`;
+
+  if(answers.length){
+   html+=answers.map(t=>{
+    const p=players.find(x=>x.id===t.player_id);
+    return `<div class="answer">
+     <b>${escapeHTML(p?.name||"Jogador")}:</b>
+     ${escapeHTML(t.message)}
+    </div>`;
+   }).join("");
+  }else{
+   html+=`<p class="small">Aguardando respostas...</p>`;
   }
+
+  html+="</div>";
+ }
+
+ $("tipsList").innerHTML=html||"<p>Aguardando respostas...</p>";
+
+ const currentAnswers=tips.filter(
+  t=>Number(t.question_index||0)===currentIndex
+ );
+
+ const already=currentAnswers.some(t=>t.player_id===currentPlayer.id);
+
+ $("tipForm").hidden=
+  currentRound.phase!=="tips"||already;
+
+ $("answerStatus").textContent=
+  currentRound.phase==="tips"
+  ?currentAnswers.length+" de "+players.length+" respostas enviadas nesta pergunta."
+  :"As perguntas foram encerradas.";
+
+ if(currentRound.phase==="tips"){
+  await checkAdvanceQuestion(currentAnswers);
+ }
+}
+
+async function checkAdvanceQuestion(currentAnswers){
+ if(advanceBusy||!currentRound)return;
+ if(currentUser.id!==currentRoom.owner_id)return;
+
+ const index=Number(currentRound.current_question||0);
+
+ const uniquePlayers=new Set(currentAnswers.map(t=>t.player_id));
+
+ if(uniquePlayers.size<players.length)return;
+
+ advanceBusy=true;
+
+ try{
+  const next=index+1;
+
+  const updateData=next>=QUESTIONS.length
+   ?{phase:"voting"}
+   :{current_question:next};
+
+  const u=await db.from("blefe_rounds")
+  .update(updateData)
+  .eq("id",currentRound.id)
+  .eq("current_question",index)
+  .eq("phase","tips")
+  .select();
+
+  if(u.error)throw u.error;
+
+  if(u.data&&u.data.length){
+   await loadRound();
+  }
+ }catch(e){
+  console.error("Erro ao avançar pergunta:",e);
+ }finally{
+  advanceBusy=false;
  }
 }
 
 async function sendTip(){
  const message=$("tipInput").value.trim();
  if(!message)return;
+ if(!currentRound||currentRound.phase!=="tips")return;
+
+ const index=Number(currentRound.current_question||0);
+
+ const already=tips.some(t=>
+  t.player_id===currentPlayer.id&&
+  Number(t.question_index||0)===index
+ );
+
+ if(already){
+  $("gameMessage").textContent="Você já respondeu esta pergunta.";
+  return;
+ }
+
+ $("sendTipBtn").disabled=true;
 
  try{
   const r=await db.from("blefe_tips").insert({
    round_id:currentRound.id,
    player_id:currentPlayer.id,
-   message
+   message,
+   question_index:index
   });
 
   if(r.error)throw r.error;
 
   $("tipInput").value="";
+  $("gameMessage").textContent="Resposta enviada! Aguardando os outros jogadores.";
   await loadTips();
 
  }catch(e){
   $("gameMessage").textContent="Erro: "+e.message;
+ }finally{
+  $("sendTipBtn").disabled=false;
  }
 }
 
@@ -506,9 +624,11 @@ async function loadVotes(){
  if(currentRound.phase==="voting"){
   $("voteCard").hidden=false;
 
+  const already=votes.some(v=>v.voter_id===currentPlayer.id);
+
   $("voteChoices").innerHTML=players.map(p=>
    `<button class="choice"
-    ${votes.some(v=>v.voter_id===currentPlayer.id)?"disabled":""}
+    ${already?"disabled":""}
     onclick="castVote('${p.id}')">
     ⚽ ${escapeHTML(p.name)}
    </button>`
@@ -518,7 +638,9 @@ async function loadVotes(){
    votes.length+" de "+players.length+" votos registrados.";
  }
 
- if(votes.length===players.length&&
+ const uniqueVoters=new Set(votes.map(v=>v.voter_id));
+
+ if(uniqueVoters.size===players.length&&
     currentUser.id===currentRoom.owner_id&&
     currentRound.phase==="voting"){
   await finishRound();
@@ -526,6 +648,8 @@ async function loadVotes(){
 }
 
 async function castVote(target){
+ if(votes.some(v=>v.voter_id===currentPlayer.id))return;
+
  try{
   const r=await db.from("blefe_votes").insert({
    round_id:currentRound.id,
@@ -542,8 +666,8 @@ async function castVote(target){
 }
 
 async function finishRound(){
- if(roundBusy)return;
- roundBusy=true;
+ if(finishBusy)return;
+ finishBusy=true;
 
  try{
   const r=await db.rpc("finish_blefe_round",{
@@ -551,13 +675,12 @@ async function finishRound(){
   });
 
   if(r.error)throw r.error;
-
   await loadRound();
 
  }catch(e){
   $("gameMessage").textContent="Erro no resultado: "+e.message;
  }finally{
-  roundBusy=false;
+  finishBusy=false;
  }
 }
 
