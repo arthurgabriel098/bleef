@@ -143,7 +143,9 @@ footer{text-align:center;color:#66736a;font-size:12px;padding:25px}
   </div>
 
   <p id="answerStatus" class="small"></p>
-
+<button id="manualNextBtn" class="btn primary" onclick="manualAdvance()" hidden>
+ VERIFICAR RESPOSTAS E AVANÇAR →
+</button>
   <h3>📢 RESPOSTAS DA PARTIDA</h3>
   <div id="tipsList"></div>
  </div>
@@ -519,7 +521,9 @@ async function loadTips(){
  $("tipForm").hidden=
   currentRound.phase!=="tips"||already;
 
- $("answerStatus").textContent=
+ $("answerStatus").textContent= $("manualNextBtn").hidden=
+ currentRound.phase!=="tips"||
+ currentUser.id!==currentRoom.owner_id;
   currentRound.phase==="tips"
   ?currentAnswers.length+" de "+players.length+" respostas enviadas nesta pergunta."
   :"As perguntas foram encerradas.";
@@ -566,7 +570,67 @@ async function checkAdvanceQuestion(currentAnswers){
   advanceBusy=false;
  }
 }
+async function manualAdvance(){
+ if(!currentRound)return;
+ if(currentUser.id!==currentRoom.owner_id)return;
+ if(advanceBusy)return;
 
+ advanceBusy=true;
+
+ try{
+  const index=Number(currentRound.current_question||0);
+
+  const p=await db.from("players")
+   .select("id")
+   .eq("room_id",currentRoom.id);
+
+  if(p.error)throw p.error;
+
+  const a=await db.from("blefe_tips")
+   .select("player_id")
+   .eq("round_id",currentRound.id)
+   .eq("question_index",index);
+
+  if(a.error)throw a.error;
+
+  const answered=new Set((a.data||[]).map(x=>x.player_id));
+  const total=p.data.length;
+
+  if(answered.size<total){
+   $("gameMessage").textContent=
+    `Ainda faltam ${total-answered.size} jogador(es) responderem.`;
+   return;
+  }
+
+  const next=index+1;
+
+  const updateData=next>=QUESTIONS.length
+   ?{phase:"voting"}
+   :{current_question:next};
+
+  const u=await db.from("blefe_rounds")
+   .update(updateData)
+   .eq("id",currentRound.id)
+   .eq("current_question",index)
+   .eq("phase","tips")
+   .select("id");
+
+  if(u.error)throw u.error;
+
+  if(!u.data||!u.data.length){
+   throw Error("O banco não confirmou o avanço. Verifique as permissões de atualização da tabela blefe_rounds.");
+  }
+
+  $("gameMessage").textContent="Avançando...";
+  await loadRound();
+
+ }catch(e){
+  $("gameMessage").textContent="Erro: "+e.message;
+  console.error(e);
+ }finally{
+  advanceBusy=false;
+ }
+}
 async function sendTip(){
  const message=$("tipInput").value.trim();
  if(!message)return;
